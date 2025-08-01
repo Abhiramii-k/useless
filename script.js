@@ -1,146 +1,114 @@
-// -------------------------
-// Phase 5: Useless Add-ons
-// -------------------------
+const taskInput = document.getElementById('taskInput');
+const addTaskBtn = document.getElementById('addTaskBtn');
+const taskList = document.getElementById('taskList');
+const annoyanceScoreEl = document.getElementById('annoyance-score');
+const stopBtn = document.getElementById('stopBtn');
+const snoozeBtn = document.getElementById('snoozeBtn');
+const bgVideo = document.getElementById('bgVideo');
 
-// Existing elements
-const taskInput = document.getElementById("taskInput");
-const addTaskBtn = document.getElementById("addTaskBtn");
-const taskList = document.getElementById("taskList");
-const annoyanceScoreDisplay = document.getElementById("annoyance-score");
-const stopBtn = document.getElementById("stopBtn");
-const snoozeBtn = document.getElementById("snoozeBtn");
+let annoyanceScore = parseInt(localStorage.getItem('annoyanceScore')) || 0;
+let notificationsActive = true;
+let snooze = false;
+let stopClickCount = 0;
 
-// New elements for Phase 5
-const leaderboard = document.createElement("div");
-leaderboard.id = "leaderboard";
-document.body.appendChild(leaderboard);
-
-let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
-let annoyanceScore = 0;
-let notificationInterval;
-let stopAttempts = 0;
-let snoozeCount = 0;
-
-// Task Moods
-const moods = ["😴 Lazy", "😡 Angry", "😂 Dramatic", "🤔 Confused", "💅 Sassy"];
-
-// Add fake users for leaderboard
-const fakeUsers = [
-  { name: "Alice", score: 120 },
-  { name: "Bob", score: 90 },
-  { name: "Charlie", score: 75 },
-  { name: "You", score: 0 },
+// Funny messages
+const messages = [
+  "😈 Stop scrolling Instagram and finish a task!",
+  "📢 Your fake productivity score just went up!",
+  "⏰ Reminder: Procrastination level = Master!",
+  "🙃 Are you *really* working, or just pretending?",
+  "🔥 Your Annoyance Score is growing. Congrats?",
+  "📅 Fake meetings won’t save you, finish your tasks!"
 ];
 
-// Display leaderboard
-function showLeaderboard() {
-  fakeUsers[3].score = annoyanceScore; // update "You"
-  fakeUsers.sort((a, b) => b.score - a.score);
+// Load saved tasks
+let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+renderTasks();
 
-  leaderboard.innerHTML = `
-    <h3>🏆 Fake Productivity Leaderboard</h3>
-    <ul>
-      ${fakeUsers.map(u => `<li>${u.name}: ${u.score} pts</li>`).join("")}
-    </ul>
-  `;
+if(addTaskBtn){
+  addTaskBtn.addEventListener('click', () => {
+    if(taskInput.value.trim() !== ""){
+      tasks.push(taskInput.value);
+      localStorage.setItem('tasks', JSON.stringify(tasks));
+      taskInput.value = "";
+      renderTasks();
+      increaseAnnoyance();
+    }
+  });
 }
 
-// Update leaderboard every 10s
-setInterval(showLeaderboard, 10000);
-
-// Add Task
-addTaskBtn.addEventListener("click", () => {
-  const taskText = taskInput.value.trim();
-  if (taskText === "") {
-    alert("😒 Enter a task first!");
-    return;
-  }
-
-  const mood = moods[Math.floor(Math.random() * moods.length)];
-  tasks.push({ text: `${taskText} (${mood})`, done: false });
-  localStorage.setItem("tasks", JSON.stringify(tasks));
-  taskInput.value = "";
-  displayTasks();
-});
-
-// Display Tasks
-function displayTasks() {
+function renderTasks() {
+  if(!taskList) return;
   taskList.innerHTML = "";
   tasks.forEach((task, index) => {
-    const li = document.createElement("li");
-    li.innerHTML = `
-      <span style="text-decoration: ${task.done ? 'line-through' : 'none'}">
-        ${task.text}
-      </span>
-      <div>
-        <button onclick="toggleDone(${index})">✔️</button>
-        <button onclick="deleteTask(${index})">🗑️</button>
-      </div>
-    `;
+    const li = document.createElement('li');
+    li.innerText = task;
+    li.onclick = () => removeTask(index);
     taskList.appendChild(li);
   });
 }
 
-// Toggle Done
-window.toggleDone = function(index) {
-  tasks[index].done = !tasks[index].done;
-  localStorage.setItem("tasks", JSON.stringify(tasks));
-  displayTasks();
-
-  if (tasks[index].done) {
-    fakeReward(tasks[index].text);
-    checkAchievements();
-  }
-};
-
-// Delete Task
-window.deleteTask = function(index) {
+function removeTask(index) {
   tasks.splice(index, 1);
-  localStorage.setItem("tasks", JSON.stringify(tasks));
-  displayTasks();
-};
+  localStorage.setItem('tasks', JSON.stringify(tasks));
+  renderTasks();
+}
 
-// -------------------------
-// Random Popups
-// -------------------------
+function increaseAnnoyance() {
+  annoyanceScore++;
+  localStorage.setItem('annoyanceScore', annoyanceScore);
+  if(annoyanceScoreEl) annoyanceScoreEl.innerText = `Annoyance Score: ${annoyanceScore}`;
+}
+
+// Desktop notifications
+if ("Notification" in window && Notification.permission !== "granted") {
+  Notification.requestPermission();
+}
+
+function showNotification(message) {
+  if (Notification.permission === "granted") {
+    new Notification("😈 Fake Productivity Assistant", {
+      body: message,
+      icon: "https://cdn-icons-png.flaticon.com/512/685/685352.png"
+    });
+  } else {
+    alert(message);
+  }
+}
+
+// Repeat annoying popups
 setInterval(() => {
-  const popups = [
-    "💡 Pro Tip: Close this app and nothing gets done.",
-    "😏 Still here? I admire your lack of productivity.",
-    "🔥 Productivity Level: Potato",
-    "😂 Breaking: Scientists confirm you’re procrastinating!"
-  ];
-  const randomPopup = document.createElement("div");
-  randomPopup.className = "random-popup";
-  randomPopup.innerText = popups[Math.floor(Math.random() * popups.length)];
-  document.body.appendChild(randomPopup);
-
-  setTimeout(() => randomPopup.remove(), 5000);
-}, 15000); // every 15s
-
-// -------------------------
-// Fake Achievements
-// -------------------------
-function checkAchievements() {
-  if (annoyanceScore >= 20) {
-    showBadge("🏅 Procrastination Master");
+  if(notificationsActive && !snooze){
+    const randomMsg = messages[Math.floor(Math.random() * messages.length)];
+    showNotification(randomMsg);
+    increaseAnnoyance();
   }
-  if (tasks.filter(t => t.done).length >= 3) {
-    showBadge("🎖️ Task Terminator");
-  }
+}, 10000);
+
+// Stop button — needs 2 clicks
+if(stopBtn){
+  stopBtn.addEventListener('click', () => {
+    stopClickCount++;
+    if(stopClickCount === 1){
+      alert("😏 Nice try... click Stop again if you REALLY want peace.");
+    } else if(stopClickCount === 2){
+      notificationsActive = false;
+      alert("✅ Fine! Notifications have finally stopped.");
+    }
+  });
 }
 
-function showBadge(badge) {
-  const badgePopup = document.createElement("div");
-  badgePopup.className = "badge-popup";
-  badgePopup.innerText = `Unlocked: ${badge}`;
-  document.body.appendChild(badgePopup);
-
-  setTimeout(() => badgePopup.remove(), 4000);
+// Snooze button
+if(snoozeBtn){
+  snoozeBtn.addEventListener('click', () => {
+    snooze = true;
+    setTimeout(() => snooze = false, 30000);
+    alert("😴 Snoozed for 30 seconds!");
+  });
 }
 
-// -------------------------
-// Continue Notifications
-// -------------------------
-
-// Reuse Phase 4 functions (showNotification, fakeReward, etc.)
+// Make background video unstoppable
+if(bgVideo){
+  bgVideo.addEventListener('pause', () => bgVideo.play());
+  bgVideo.addEventListener('contextmenu', e => e.preventDefault());
+}
