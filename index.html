@@ -7,24 +7,40 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <!-- Background Video -->
-  <video autoplay muted loop id="bgVideo">
-    <source src="background.mp4" type="video/mp4">
-    Your browser does not support HTML5 video.
-  </video>
-
-  <!-- Navbar -->
-  <nav>
-    <a href="index.html">🏠 Home</a>
-    <a href="tasks.html">📝 Tasks</a>
-    <a href="stats.html">📊 Stats</a>
-  </nav>
-
-  <!-- Container -->
-  <div class="container">
-    <h1>😈 Fake Productivity Assistant</h1>
-    <p class="subtitle">Because being productive is overrated.</p>
-    <p>Welcome! Navigate above to start adding tasks or check your fake stats.</p>
+  <!-- Welcome Screen -->
+  <div id="welcome-screen" class="welcome-screen">
+    <div class="welcome-content">
+      <h1>👾 Welcome to Fake Productivity Assistant</h1>
+      <p>Your cartoon buddy that *helps* you miss deadlines 😂</p>
+      <button id="start-btn">🚀 Let's Begin</button>
+    </div>
   </div>
+
+  <!-- Main App Screen -->
+  <div id="app-screen" class="app-screen hidden">
+    <div class="container">
+      <h2>📝 Your To-Do List</h2>
+      <div class="task-input">
+        <input type="text" id="taskInput" placeholder="Enter a task...">
+        <input type="datetime-local" id="deadlineInput">
+        <button id="addTaskBtn">Add Task ➕</button>
+      </div>
+
+      <!-- Fake Calendar Section -->
+      <div id="fakeCalendar" class="fake-calendar">
+        <h3>📅 Your Totally Reliable Calendar</h3>
+        <ul id="calendarList"></ul>
+      </div>
+
+      <ul id="taskList"></ul>
+      <p id="score">Annoyance Score: 0</p>
+      <div class="buttons">
+        <button id="stopBtn">⛔ Stop Notifications</button>
+        <button id="snoozeBtn">😴 Snooze</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js" defer></script>
 </body>
 </html>
